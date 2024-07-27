@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "iostream": "cpp",
+        "xtr1common": "cpp"
+    }
+}

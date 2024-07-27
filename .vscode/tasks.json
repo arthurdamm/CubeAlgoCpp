@@ -1,0 +1,21 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build C++ Project",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-command",
+        "& { $files = Get-ChildItem -Path '${workspaceFolder}' -Recurse -Filter *.cpp; cl.exe /EHsc /std:c++17 $($files | ForEach-Object { $_.FullName }) /Fe:${workspaceFolder}\\bin\\output.exe; if ($?) { ${workspaceFolder}\\bin\\output.exe } }"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$msCompile"],
+      "detail": "Generated task for building C++ project"
+    }
+  ]
+}
+
