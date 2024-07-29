@@ -6,6 +6,13 @@
 #include <pmmintrin.h> // SSE3 _mm_moveldup_ps(), _mm_movehdup_ps()
 #include <type_traits> // std::is_same_v()
 
+#define LOG 1
+#if LOG
+#define P(x) std::cout << x << std::endl
+#else
+#define P(x)
+#endif
+
 #define RESTRICT __restrict						/* no alias hint */
 
 // 4 floats
@@ -45,22 +52,41 @@ public:
 
 using FQuat4f = TQuat<float>;
 
+
+
 /**
- * Loads 4 FLOATs from aligned memory.
+ * Stores a vector to aligned memory.
  *
- * @param Ptr	Aligned memory pointer to the 4 FLOATs
- * @return		VectorRegister4Float(Ptr[0], Ptr[1], Ptr[2], Ptr[3])
+ * @param Vec	Vector to store
+ * @param Ptr	Aligned memory pointer
  */
-FORCEINLINE VectorRegister4Float VectorLoadAligned(const float* Ptr)
+FORCEINLINE void VectorStoreAligned(const VectorRegister4Float& Vec, float* Dst)
 {
-	return _mm_load_ps((const float*)(Ptr));
+	P("10. VectorStoreAligned(const VectorRegister4Float& Vec, float* Dst)");
+	// UE_LOG(LogTemp, Display, TEXT("VectorStoreAligned(const VectorRegister4Float& Vec, float* Dst)"));
+	_mm_store_ps(Dst, Vec);
 }
 
+// template<typename T>
+// FORCEINLINE void VectorStoreAligned(const TVectorRegisterType<T>& Vec, UE::Math::TVector4<T>* Dst)
+// {
+// 	VectorStoreAligned(Vec, (T*)Dst);
+// }
+
 template<typename T>
-FORCEINLINE TVectorRegisterType<T> VectorLoadAligned(const TQuat<T>* Ptr)
+FORCEINLINE void VectorStoreAligned(const TVectorRegisterType<T>& Vec, struct TQuat<T>* Dst)
 {
-	return VectorLoadAligned((const T*)(Ptr));
+	P("9. VectorStoreAligned(const TVectorRegisterType<T>& Vec, struct TQuat<T>* Dst)");
+	VectorStoreAligned(Vec, (T*)Dst);
 }
+
+// FORCEINLINE void VectorStoreAligned(const VectorRegister4Float& Vec, VectorRegister4Float* Dst)
+// {
+// 	*Dst = Vec;
+// }
+
+
+
 
 /**
  * Multiplies two vectors (component-wise) and returns the result.
@@ -71,6 +97,7 @@ FORCEINLINE TVectorRegisterType<T> VectorLoadAligned(const TQuat<T>* Ptr)
  */
 FORCEINLINE VectorRegister4Float VectorMultiply( const VectorRegister4Float& Vec1, const VectorRegister4Float& Vec2 )
 {
+	P("6. VectorMultiply( const VectorRegister4Float& Vec1, const VectorRegister4Float& Vec2 )");
 	return _mm_mul_ps(Vec1, Vec2);
 }
 
@@ -84,6 +111,7 @@ FORCEINLINE VectorRegister4Float VectorMultiply( const VectorRegister4Float& Vec
 
 FORCEINLINE VectorRegister4Float VectorAdd( const VectorRegister4Float& Vec1, const VectorRegister4Float& Vec2 )
 {
+	P("8. VectorAdd( const VectorRegister4Float& Vec1, const VectorRegister4Float& Vec2 )");
 	return _mm_add_ps(Vec1, Vec2);
 }
 
@@ -97,6 +125,7 @@ FORCEINLINE VectorRegister4Float VectorAdd( const VectorRegister4Float& Vec1, co
  */
 FORCEINLINE VectorRegister4Float VectorMultiplyAdd(const VectorRegister4Float& A, const VectorRegister4Float& B, const VectorRegister4Float& C)
 {
+	P("7. VectorMultiplyAdd(const VectorRegister4Float& A, const VectorRegister4Float& B, const VectorRegister4Float& C)");
 #define UE_PLATFORM_MATH_USE_FMA3 0
 #if UE_PLATFORM_MATH_USE_FMA3
 	return _mm_fmadd_ps(A, B, C);
@@ -202,6 +231,7 @@ namespace GlobalVectorConstants
 */
 FORCEINLINE VectorRegister4Float VectorQuaternionMultiply2( const VectorRegister4Float& Quat1, const VectorRegister4Float& Quat2 )
 {
+	P("5. VectorQuaternionMultiply2( const VectorRegister4Float& Quat1, const VectorRegister4Float& Quat2 )");
 	VectorRegister4Float Result = VectorMultiply(VectorReplicate(Quat1, 3), Quat2);
 	Result = VectorMultiplyAdd( VectorMultiply(VectorReplicate(Quat1, 0), VectorSwizzle(Quat2, 3, 2, 1, 0)), GlobalVectorConstants::QMULTI_SIGN_MASK0, Result);
 	Result = VectorMultiplyAdd( VectorMultiply(VectorReplicate(Quat1, 1), VectorSwizzle(Quat2, 2, 3, 0, 1)), GlobalVectorConstants::QMULTI_SIGN_MASK1, Result);
@@ -211,36 +241,27 @@ FORCEINLINE VectorRegister4Float VectorQuaternionMultiply2( const VectorRegister
 }
 
 /**
- * Stores a vector to aligned memory.
+ * Loads 4 FLOATs from aligned memory.
  *
- * @param Vec	Vector to store
- * @param Ptr	Aligned memory pointer
+ * @param Ptr	Aligned memory pointer to the 4 FLOATs
+ * @return		VectorRegister4Float(Ptr[0], Ptr[1], Ptr[2], Ptr[3])
  */
-FORCEINLINE void VectorStoreAligned(const VectorRegister4Float& Vec, float* Dst)
+FORCEINLINE VectorRegister4Float VectorLoadAligned(const float* Ptr)
 {
-	// UE_LOG(LogTemp, Display, TEXT("VectorStoreAligned(const VectorRegister4Float& Vec, float* Dst)"));
-	_mm_store_ps(Dst, Vec);
+	P("4. VectorLoadAligned(const float* Ptr)");
+	return _mm_load_ps((const float*)(Ptr));
 }
-
-// template<typename T>
-// FORCEINLINE void VectorStoreAligned(const TVectorRegisterType<T>& Vec, UE::Math::TVector4<T>* Dst)
-// {
-// 	VectorStoreAligned(Vec, (T*)Dst);
-// }
 
 template<typename T>
-FORCEINLINE void VectorStoreAligned(const TVectorRegisterType<T>& Vec, struct TQuat<T>* Dst)
+FORCEINLINE TVectorRegisterType<T> VectorLoadAligned(const TQuat<T>* Ptr)
 {
-	VectorStoreAligned(Vec, (T*)Dst);
+	P("3. VectorLoadAligned(const TQuat<T>* Ptr)");
+	return VectorLoadAligned((const T*)(Ptr));
 }
-
-// FORCEINLINE void VectorStoreAligned(const VectorRegister4Float& Vec, VectorRegister4Float* Dst)
-// {
-// 	*Dst = Vec;
-// }
 
 FORCEINLINE void VectorQuaternionMultiply(FQuat4f* RESTRICT Result, const FQuat4f* RESTRICT Quat1, const FQuat4f* RESTRICT Quat2)
 {
+	P("2. VectorQuaternionMultiply(FQuat4f* RESTRICT Result, const FQuat4f* RESTRICT Quat1, const FQuat4f* RESTRICT Quat2)");
 	const VectorRegister4Float Q1 = VectorLoadAligned(Quat1);
 	const VectorRegister4Float Q2 = VectorLoadAligned(Quat2);
 	const VectorRegister4Float QResult = VectorQuaternionMultiply2(Q1, Q2);
@@ -250,6 +271,7 @@ FORCEINLINE void VectorQuaternionMultiply(FQuat4f* RESTRICT Result, const FQuat4
 template<typename T>
 FORCEINLINE TQuat<T> TQuat<T>::operator*(const TQuat<T>& Q) const
 {
+	P("1. TQuat<T>::operator*(const TQuat<T>& Q) const");
 	TQuat<T> Result;
 	VectorQuaternionMultiply(&Result, this, &Q);
 	
